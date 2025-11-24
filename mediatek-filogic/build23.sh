@@ -54,28 +54,23 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting build process..."
 PACKAGES=""
 PACKAGES="$PACKAGES curl"
 PACKAGES="$PACKAGES luci-i18n-firewall-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-filebrowser-zh-cn"
+# PACKAGES="$PACKAGES luci-i18n-filebrowser-zh-cn" 【自行去掉了】
 PACKAGES="$PACKAGES luci-theme-argon"
 PACKAGES="$PACKAGES luci-app-argon-config"
 PACKAGES="$PACKAGES luci-i18n-argon-config-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-diskman-zh-cn"
-
+# PACKAGES="$PACKAGES luci-i18n-diskman-zh-cn" 【自行去掉了】
 #23.05
 PACKAGES="$PACKAGES luci-i18n-opkg-zh-cn"
 PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
-
-
-PACKAGES="$PACKAGES luci-app-autoreboot"
-PACKAGES="$PACKAGES luci-app-frpc"
-PACKAGES="$PACKAGES luci-app-upnp"
-# PACKAGES="$PACKAGES luci-i18n-passwall-zh-cn"
-# PACKAGES="$PACKAGES luci-app-openclash"
+# PACKAGES="$PACKAGES luci-i18n-passwall-zh-cn" 【自行去掉了】
+# PACKAGES="$PACKAGES luci-app-openclash" 【自行去掉了】
 PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
-#PACKAGES="$PACKAGES openssh-sftp-server"
-# 增加几个必备组件 方便用户安装iStore
-PACKAGES="$PACKAGES fdisk"
-PACKAGES="$PACKAGES script-utils"
-PACKAGES="$PACKAGES luci-i18n-samba4-zh-cn"
+# PACKAGES="$PACKAGES openssh-sftp-server" 【自行去掉了】
+
+# 增加几个必备组件 方便用户安装iStore 【自行去掉了】
+# PACKAGES="$PACKAGES fdisk"
+# PACKAGES="$PACKAGES script-utils"
+# PACKAGES="$PACKAGES luci-i18n-samba4-zh-cn"
 # 第三方软件包 合并
 # ======== shell/custom-packages.sh =======
 PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
