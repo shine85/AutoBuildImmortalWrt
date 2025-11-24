@@ -59,13 +59,12 @@ PACKAGES="$PACKAGES luci-theme-argon"
 PACKAGES="$PACKAGES luci-app-argon-config"
 PACKAGES="$PACKAGES luci-i18n-argon-config-zh-cn"
 PACKAGES="$PACKAGES luci-i18n-diskman-zh-cn"
-PACKAGES="$PACKAGES luci-theme-aurora"
+
 #23.05
 PACKAGES="$PACKAGES luci-i18n-opkg-zh-cn"
 PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
-PACKAGES="$PACKAGES  luci-i18n-nikki-zh-cn"
-PACKAGES="$PACKAGES luci-app-passwall2"
-PACKAGES="$PACKAGES luci-i18n-passwall2-zh-cn"
+
+
 PACKAGES="$PACKAGES luci-app-autoreboot"
 PACKAGES="$PACKAGES luci-app-frpc"
 PACKAGES="$PACKAGES luci-app-upnp"
