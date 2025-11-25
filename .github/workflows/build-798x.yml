@@ -15,10 +15,12 @@
 # xiaomi_redmi-router-ax6000-stock ————原厂默认 bootloader（stock）版本
 # xiaomi_redmi-router-ax6000-ubootmod—————改装过 bootloader 的版本（ubootmod）
 
-name: Build Wireless Router ImmortalWrt 24.10.x
+name: Build 798X ImmortalWrt 24.10.x/23.05
 
 on:
   workflow_dispatch:
+    schedule:
+   - cron: 00 04 * * *
     inputs:
       profile:
         type: choice
@@ -518,6 +520,7 @@ on:
       pppoe_password:
         description: "宽带密码 (若启用PPPoE)"
         required: false
+
 
 jobs:
   build:
