@@ -22,8 +22,9 @@ on:
     inputs:
       profile:
         type: choice
-        description: "jcg_q30-ubootmod"
+        description: "请选择mtk路由器型号"
         required: true
+        default: 'jcg_q30-ubootmod'
         options:
           - glinet_gl-mt2500
           - glinet_gl-mt3000
