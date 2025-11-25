@@ -60,7 +60,7 @@ CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-i18n-frpc-zh-cn"
 #Frpc
 CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-i18n-upnp-zh-cn"
 #Upnp
-CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-app-kucat-config"
+CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-i18n-kucat-config-zh-cn"
 #kucat主题设置
-CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-app-autoupdate"
+#CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-app-autoupdate"
 #在线更新
