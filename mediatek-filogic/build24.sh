@@ -6,8 +6,7 @@ source shell/custom-packages.sh
 # 下载 run 文件仓库
 echo "🔄 正在同步第三方软件仓库 Cloning run file repo..."
 git clone --depth=1 https://github.com/wukongdaily/store.git /tmp/store-run-repo
-git clone --depth=1 https://github.com/soapmancn/luci-app-autoupdate/tmp/luci-app-autoupdate
-git clone --depth=1 https://github.com/sirpdboy/luci-app-kucat-config/tmp/luci-app-kucat-config
+
 
 # 拷贝 run/arm64 下所有 run 文件和ipk文件 到 extra-packages 目录
 mkdir -p /home/build/immortalwrt/extra-packages
