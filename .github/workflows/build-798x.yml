@@ -520,7 +520,7 @@ on:
         description: "宽带密码 (若启用PPPoE)"
         required: false
   schedule:
-   - cron: 00 04 * * *  # UTC 4:00 (北京时间 12:00)
+   - cron: 42 05 * * *  # UTC 4:00 (北京时间 12:00)
 
 jobs:
   build:
