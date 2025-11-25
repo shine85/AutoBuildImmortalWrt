@@ -19,8 +19,7 @@ name: Build 798X ImmortalWrt 24.10.x/23.05
 
 on:
   workflow_dispatch:
-    schedule:
-   - cron: 00 04 * * *
+
     inputs:
       profile:
         type: choice
@@ -520,7 +519,8 @@ on:
       pppoe_password:
         description: "宽带密码 (若启用PPPoE)"
         required: false
-
+  schedule:
+   - cron: 00 04 * * *  # UTC 4:00 (北京时间 12:00)
 
 jobs:
   build:
