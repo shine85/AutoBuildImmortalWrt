@@ -11,12 +11,9 @@ if [ -n "$CUSTOM_PACKAGES" ]; then
   else
     # 下载 run 文件仓库
     echo "🔄 正在同步第三方软件仓库 Cloning run file repo..."
-    git clone --depth=1 https://github.com/wukongdaily/store.git /tmp/store-run-repo
-    git clone --depth=1 https://github.com/mineextremely/store.git /tmp/store-run-repo
-    echo 'src-git autoupdate https://github.com/soapmancn/luci-app-autoupdate' >>feeds.conf.default
-    echo 'src-git kucat-config https://github.com/sirpdboy/luci-app-kucat-config' >>feeds.conf.default    
-    #git clone --depth=1 https://github.com/soapmancn/luci-app-autoupdate.git /tmp/store-run-repo
-    #git clone --depth=1 https://github.com/sirpdboy/luci-app-kucat-config.git /tmp/store-run-repo
+    #git clone --depth=1 https://github.com/wukongdaily/store.git /tmp/store-run-repo
+    git clone --depth=1 https://github.com/shine85/store.git /tmp/store-run-repo
+
     # 拷贝 run/arm64 下所有 run 文件和ipk文件 到 extra-packages 目录
     mkdir -p /home/build/immortalwrt/extra-packages
     cp -r /tmp/store-run-repo/run/arm64/* /home/build/immortalwrt/extra-packages/
