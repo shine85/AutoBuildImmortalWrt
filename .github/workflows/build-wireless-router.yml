@@ -518,7 +518,8 @@ on:
       pppoe_password:
         description: "宽带密码 (若启用PPPoE)"
         required: false
-
+  schedule:
+   - cron: 00 04 * * *
 
 jobs:
   build:
