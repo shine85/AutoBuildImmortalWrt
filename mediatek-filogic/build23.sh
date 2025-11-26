@@ -70,6 +70,7 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 
 #自己添加的
 PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
+PACKAGES="$PACKAGES luci-theme-kucat"
 PACKAGES="$PACKAGES luci-app-kucat-config"
 
 # 增加几个必备组件 方便用户安装iStore 【自行去掉了】
