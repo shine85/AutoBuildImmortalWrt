@@ -67,9 +67,11 @@ PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
 # PACKAGES="$PACKAGES luci-app-openclash" 【自行去掉了】
 PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 # PACKAGES="$PACKAGES openssh-sftp-server" 【自行去掉了】
+
+#自己添加的
 PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
 PACKAGES="$PACKAGES luci-app-kucat-config"
-# PACKAGES="$PACKAGES luci-app-autoupdate"
+
 # 增加几个必备组件 方便用户安装iStore 【自行去掉了】
 # PACKAGES="$PACKAGES fdisk"
 # PACKAGES="$PACKAGES script-utils"
