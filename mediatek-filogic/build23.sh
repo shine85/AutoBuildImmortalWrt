@@ -69,8 +69,9 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 # PACKAGES="$PACKAGES openssh-sftp-server" 【自行去掉了】
 
 #自己添加的
-PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
+
 PACKAGES="$PACKAGES luci-theme-kucat"
+# PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
 # PACKAGES="$PACKAGES luci-app-kucat-config" 【编译了设置没效果】
 
 # 增加几个必备组件 方便用户安装iStore 【自行去掉了】
