@@ -517,9 +517,10 @@ jobs:
       - name: Generate Tag & Date
         id: gen_tag
         run: |
-          # 生成日期字符串，例如 2024.12.01-0830
+          # 生成日期字符串，用于文件重命名 (例如 2024.12.01-0830)
           DATE_STR=$(date +%Y.%m.%d-%H%M)
-          # 生成Tag，例如 jcg_q30-20241201-0830
+          # 生成Tag，用于Release唯一标识 (例如 jcg_q30-20241201-0830)
+          # 注意：为了能保存多个历史版本，Tag 必须包含时间戳，否则会冲突或覆盖
           TAG_NAME="${{ inputs.profile }}-$(date +%Y%m%d-%H%M)"
           
           echo "RELEASE_DATE=$DATE_STR" >> $GITHUB_ENV
@@ -648,16 +649,18 @@ jobs:
           extra_content_ip="#### 管理地址 $custom_router_ip"
           echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
 
-      # 2. 固件文件重命名：机型_日期_原始名
+      # 2. 固件文件重命名：机型_日期_原始文件名
       - name: Rename Firmware Files
         run: |
           cd ${{ github.workspace }}/bin/targets/${{ env.platform }}
+          # 修复权限问题：Docker 生成的文件归 root 所有，需要改为 runner 用户
+          sudo chown -R $USER .
+
           # 获取当前目录下的所有文件
           for file in *; do
             if [[ -f "$file" ]]; then
-              # 新文件名前缀：机型-时间-
-              # 结果示例：jcg_q30-20241027-0830-immortalwrt-....bin
-              mv "$file" "${{ inputs.profile }}-${{ env.RELEASE_DATE }}-$file"
+              # 重命名逻辑：机型_日期(2024.12.01-0830)_原始文件名
+              mv "$file" "${{ inputs.profile }}_${{ env.RELEASE_DATE }}_$file"
             fi
           done
           echo "Files renamed successfully."
@@ -685,7 +688,6 @@ jobs:
             matchedReleases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             
             // 保留最新的 2 个 (因为本次运行还会生成 1 个，最终是 3 个)
-            // 如果你想保留更多，修改 slice(2) 中的数字即可
             const releasesToDelete = matchedReleases.slice(2);
             
             if (releasesToDelete.length === 0) {
@@ -720,9 +722,9 @@ jobs:
       - name: Upload ImmortalWrt as release assets
         uses: softprops/action-gh-release@v2.2.1
         with:
-          # 使用动态生成的 Tag
+          # 使用动态生成的 Tag (机型-时间戳)
           tag_name: ${{ env.RELEASE_TAG }}
-          # 使用动态生成的 标题 (机型 + 格式化日期)
+          # 标题也使用动态格式
           name: ${{ inputs.profile }} ${{ env.RELEASE_DATE }}
           body_path: ${{ github.workspace }}/mediatek-filogic/info.md
           # 上传重命名后的文件
