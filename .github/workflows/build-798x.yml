@@ -667,7 +667,7 @@ jobs:
           
                 - name: Upload ImmortalWrt as release assets
         uses: softprops/action-gh-release@v2.2.1
-        with:
+          with:
           tag_name: ${{ github.event.inputs.profile }}
           name: ImmortalWrt-Wireless
           body_path: ${{ github.workspace }}/mediatek-filogic/info.md
