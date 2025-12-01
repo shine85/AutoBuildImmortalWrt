@@ -1,25 +1,7 @@
-# 此工作流99% 使用luci 24.10.x 来构建 极个别机型使用快照版和23.05.4版本来构建
-# 23.05.4 特有机型列表
-# abt_asr3000-ubootmod
-# cetron_ct3003-stock
-# cmcc_a10
-# cmcc_rax3000m-emmc-ubootmod
-# cmcc_rax3000m-nand-ubootmod
-# imou_lc-hx3001-ubootmod
-# jcg_q30 捷成
-# jcg_q30-ubootmod
-# qihoo_360t7-ubootmod
-# xiaomi_mi-router-wr30u-112m-nmbm
-# xiaomi_redmi-router-ax6000 该机型在24.10.4 分化为2个机型
-# —————————————————————————————24.10.4—————————————————————————————————
-# xiaomi_redmi-router-ax6000-stock ————原厂默认 bootloader（stock）版本
-# xiaomi_redmi-router-ax6000-ubootmod—————改装过 bootloader 的版本（ubootmod）
-
 name: Build 798X ImmortalWrt 24.10.x/23.05
 
 on:
   workflow_dispatch:
-
     inputs:
       profile:
         type: choice
@@ -35,7 +17,6 @@ on:
           - glinet_gl-b2200
           - glinet_gl-x3000
           - glinet_gl-xe3000
-          # 就是Fudy MT3000
           - huasifei_wh3000-emmc
           - cudy_tr3000-v1
           - cudy_tr3000-v1-ubootmod
@@ -43,7 +24,6 @@ on:
           - jcg_q30-pro
           - jcg_q30
           - jcg_q30-ubootmod
-          # 京东云AX6000百里
           - jdcloud_re-cp-03
           - xiaomi_mi-router-ax3000t
           - xiaomi_mi-router-ax3000t-ubootmod
@@ -71,8 +51,6 @@ on:
           - cmcc_rax3000m-nand-ubootmod
           - imou_lc-hx3001-ubootmod
           - qihoo_360t7-ubootmod
-          - xiaomi_mi-router-wr30u-112m-nmbm
-          - xiaomi_redmi-router-ax6000
           - abt_asr3000
           - abt_asr3000-ubootmod
           - cetron_ct3003-stock
@@ -183,7 +161,6 @@ on:
           - zte_mf269
           - zte_mf269-stock
           - zyxel_nbg7815
-          #324 新增mt7621平台的路由器
           - adslr_g7
           - afoundry_ew1200
           - alfa-network_ax1800rm
@@ -451,7 +428,6 @@ on:
           - zyxel_nwa55axe
           - zyxel_wap6805
           - zyxel_wsm20
-          # 新增斐讯K3 AC88U等 bcm53xx/generic 平台
           - phicomm_k3
           - asus_rt-ac3100
           - asus_rt-ac56u
@@ -525,6 +501,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    # 必需权限：用于删除旧 Release 和创建新 Release
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -533,14 +512,25 @@ jobs:
       - name: Set executable permissions
         run: |
           chmod +x ${{ github.workspace }}/mediatek-filogic/build24.sh
-      
+
+      # 1. 生成动态 Tag 和 时间变量
+      - name: Generate Tag & Date
+        id: gen_tag
+        run: |
+          # 生成日期字符串，例如 2024.12.01-0830
+          DATE_STR=$(date +%Y.%m.%d-%H%M)
+          # 生成Tag，例如 jcg_q30-20241201-0830
+          TAG_NAME="${{ inputs.profile }}-$(date +%Y%m%d-%H%M)"
+          
+          echo "RELEASE_DATE=$DATE_STR" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+          echo "Generated Tag: $TAG_NAME"
+
       - name: Save Custom Router IP into OpenWrt files
         run: |
           mkdir -p "${{ github.workspace }}/custom"
           echo "${{ github.event.inputs.custom_router_ip }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
           echo "您设置的路由器管理地址是:${{ github.event.inputs.custom_router_ip }}"
-          # 后续步骤会将该文件映射到路由器/etc/config/custom_router_ip.txt 以便用于开机脚本99-custom.sh读取用户设置的ip
-
 
       - name: Validate PPPoE Inputs
         run: |
@@ -559,7 +549,6 @@ jobs:
           else
             echo "❎ 未启用 luci-app-store"
           fi
-
 
       - name: Build Wireless ImmortalWrt
         run: |
@@ -596,12 +585,10 @@ jobs:
           # 判断机型
           case "$profile" in
               glinet_gl-b2200)
-                  # 虽然它是高通ipq40xx平台 但由于都是gl机型 故放在一起 找起来方便
                   tag=ipq40xx-generic-openwrt-24.10.4
                   echo "platform=ipq40xx/generic" >> $GITHUB_ENV
                   ;;
               glinet_gl-axt1800|glinet_gl-ax1800)
-                  # 虽然它是高通ipq60xx平台 但由于都是gl机型 故放在一起 找起来方便
                   tag=qualcommax-ipq60xx-snapshot
                   echo "platform=qualcommax/ipq60xx" >> $GITHUB_ENV
                   ;;
@@ -609,7 +596,6 @@ jobs:
                   tag=mediatek-mt7622-openwrt-24.10.4
                   echo "platform=mediatek/mt7622" >> $GITHUB_ENV
                   ;;
-              # 下列机型目前没有24.10 因此采用23.05.4分支来构建
               cmcc_rax3000m-emmc-ubootmod | \
               cmcc_rax3000m-nand-ubootmod | \
               cmcc_a10 | \
@@ -626,12 +612,10 @@ jobs:
                   cp ${{ github.workspace }}/mediatek-filogic/build23.sh ${{ github.workspace }}/mediatek-filogic/build24.sh
                   ;;
               *)
-                  # 如果前面匹配了 ipq807x、mt7621、bcm53xx 机型文件，则使用对应 tag
                   if [[ -n "$case_tag" ]]; then
                       tag=$case_tag
                       echo "platform=$case_platform" >> $GITHUB_ENV
                   else
-                      # 默认分支
                       tag=mediatek-filogic-openwrt-24.10.4
                   fi
                   ;;
@@ -651,8 +635,9 @@ jobs:
               -e PPPOE_ACCOUNT=${{ inputs.pppoe_account }} \
               -e PPPOE_PASSWORD=${{ inputs.pppoe_password }} \
             immortalwrt/imagebuilder:$tag /bin/bash /home/build/immortalwrt/build.sh
-         - name: Create info
-     run: |
+          
+      - name: Create info
+        run: |
           if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
             extra_content="### 默认带docker"
             echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
@@ -662,48 +647,86 @@ jobs:
           custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
           extra_content_ip="#### 管理地址 $custom_router_ip"
           echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
-          
-        - name: Generate release version
-  id: version
-  run: |
-    # 获取该机型的Release数量
-    releases_count=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      "https://api.github.com/repos/${{ github.repository }}/releases" \
-      | jq --arg profile "${{ github.event.inputs.profile }}" \
-      '[.[] | select(.tag_name | startswith($profile + "-"))] | length')
-    
-    # 计算下一个版本号（v1, v2, v3...）
-    version=$((releases_count + 1))
-    
-    # 清理旧版本，只保留最新的3个
-    if [ $releases_count -ge 3 ]; then
-      echo "Cleaning old releases..."
-      # 获取所有Release，排序，删除旧的
-      releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-        "https://api.github.com/repos/${{ github.repository }}/releases" \
-        | jq -c --arg profile "${{ github.event.inputs.profile }}" \
-        '[.[] | select(.tag_name | startswith($profile + "-")) | {id: .id, created_at: .created_at}] | sort_by(.created_at)')
-      
-      # 删除除了最新3个之外的所有Release
-      delete_count=$((releases_count - 3))
-      for i in $(seq 0 $((delete_count - 1))); do
-        release_id=$(echo "$releases" | jq -r ".[$i].id")
-        echo "Deleting old release ID: $release_id"
-        curl -s -X DELETE \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
-      done
-    fi
-    
-    echo "version=v$version" >> $GITHUB_OUTPUT
-    echo "tag_name=${{ github.event.inputs.profile }}-v$version" >> $GITHUB_OUTPUT
 
+      # 2. 固件文件重命名：机型_日期_原始名
+      - name: Rename Firmware Files
+        run: |
+          cd ${{ github.workspace }}/bin/targets/${{ env.platform }}
+          # 获取当前目录下的所有文件
+          for file in *; do
+            if [[ -f "$file" ]]; then
+              # 新文件名前缀：机型-时间-
+              # 结果示例：jcg_q30-20241027-0830-immortalwrt-....bin
+              mv "$file" "${{ inputs.profile }}-${{ env.RELEASE_DATE }}-$file"
+            fi
+          done
+          echo "Files renamed successfully."
+
+      # 3. 自动清理脚本：只保留最新的 2 个旧版本
+      - name: Delete Older Releases
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const profile = '${{ inputs.profile }}';
+            const { owner, repo } = context.repo;
+            
+            // 获取所有 Release
+            const releases = await github.rest.repos.listReleases({
+              owner,
+              repo,
+              per_page: 100
+            });
+            
+            // 筛选出属于当前机型的 Release (通过 Tag 前缀匹配)
+            const matchedReleases = releases.data.filter(release => release.tag_name.startsWith(profile + '-'));
+            
+            // 按创建时间倒序排序 (新的在前)
+            matchedReleases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            // 保留最新的 2 个 (因为本次运行还会生成 1 个，最终是 3 个)
+            // 如果你想保留更多，修改 slice(2) 中的数字即可
+            const releasesToDelete = matchedReleases.slice(2);
+            
+            if (releasesToDelete.length === 0) {
+              console.log(`No older releases to delete for ${profile}.`);
+            } else {
+              console.log(`Found ${releasesToDelete.length} older releases to delete for ${profile}.`);
+              for (const release of releasesToDelete) {
+                console.log(`Deleting release: ${release.name} (Tag: ${release.tag_name})`);
+                
+                // 删除 Release
+                await github.rest.repos.deleteRelease({
+                  owner,
+                  repo,
+                  release_id: release.id
+                });
+                
+                // 删除对应的 Tag
+                try {
+                  await github.rest.git.deleteRef({
+                    owner,
+                    repo,
+                    ref: `tags/${release.tag_name}`
+                  });
+                  console.log(`Deleted tag: ${release.tag_name}`);
+                } catch (err) {
+                  console.log(`Failed to delete tag ${release.tag_name}: ${err.message}`);
+                }
+              }
+            }
+
+      # 4. 发布步骤
       - name: Upload ImmortalWrt as release assets
-      uses: softprops/action-gh-release@v2.2.1
-      with:
-           tag_name: ${{ steps.version.outputs.tag_name }}
-           name: ImmortalWrt-Wireless (${{ github.event.inputs.profile }} - ${{ steps.version.outputs.version }})
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          # 使用动态生成的 Tag
+          tag_name: ${{ env.RELEASE_TAG }}
+          # 使用动态生成的 标题 (机型 + 格式化日期)
+          name: ${{ inputs.profile }} ${{ env.RELEASE_DATE }}
           body_path: ${{ github.workspace }}/mediatek-filogic/info.md
+          # 上传重命名后的文件
           files: |
             ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
