@@ -665,48 +665,14 @@ jobs:
           extra_content_ip="#### 管理地址 $custom_router_ip"
           echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
           
-          
-- name: Generate release version
-  id: version
-  run: |
-    # 获取该机型的Release数量
-    releases_count=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      "https://api.github.com/repos/${{ github.repository }}/releases" \
-      | jq --arg profile "${{ github.event.inputs.profile }}" \
-      '[.[] | select(.tag_name | startswith($profile + "-"))] | length')
-    
-    # 计算下一个版本号（v1, v2, v3...）
-    version=$((releases_count + 1))
-    
-    # 清理旧版本，只保留最新的3个
-    if [ $releases_count -ge 3 ]; then
-      echo "Cleaning old releases..."
-      # 获取所有Release，排序，删除旧的
-      releases=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-        "https://api.github.com/repos/${{ github.repository }}/releases" \
-        | jq -c --arg profile "${{ github.event.inputs.profile }}" \
-        '[.[] | select(.tag_name | startswith($profile + "-")) | {id: .id, created_at: .created_at}] | sort_by(.created_at)')
-      
-      # 删除除了最新3个之外的所有Release
-      delete_count=$((releases_count - 3))
-      for i in $(seq 0 $((delete_count - 1))); do
-        release_id=$(echo "$releases" | jq -r ".[$i].id")
-        echo "Deleting old release ID: $release_id"
-        curl -s -X DELETE \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
-      done
-    fi
-    
-    echo "version=v$version" >> $GITHUB_OUTPUT
-    echo "tag_name=${{ github.event.inputs.profile }}-v$version" >> $GITHUB_OUTPUT
-
-- name: Upload ImmortalWrt as release assets
-  uses: softprops/action-gh-release@v2.2.1
-  with:
-    tag_name: ${{ steps.version.outputs.tag_name }}
-    name: ImmortalWrt-Wireless (${{ github.event.inputs.profile }} - ${{ steps.version.outputs.version }})
-    body_path: ${{ github.workspace }}/mediatek-filogic/info.md
-    files: |
-      ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
-    token: ${{ secrets.GITHUB_TOKEN }}
+                - name: Upload ImmortalWrt as release assets
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          tag_name: ${{ github.event.inputs.profile }}
+          name: ImmortalWrt-Wireless
+          body_path: ${{ github.workspace }}/mediatek-filogic/info.md
+          files: |
+            ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
