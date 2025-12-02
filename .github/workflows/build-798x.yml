@@ -689,9 +689,8 @@ jobs:
           for file in *; do
             if [ -f "$file" ]; then
               # 新文件名格式: 机型_日期_原文件名
-              # 例如: xiaomi_redmi-router-ax6000_2024.12.02_immortalwrt-....bin
-              # 这样下载后可以直接看到机型和日期，且方便排序
-              mv "$file" "${PROFILE}_${DATE}_${file}"
+              # 使用 sudo mv 解决权限问题 (因为文件是 docker root 生成的)
+              sudo mv "$file" "${PROFILE}_${DATE}_${file}"
               echo "Renamed: $file -> ${PROFILE}_${DATE}_${file}"
             fi
           done
