@@ -64,7 +64,7 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 # 静态文件服务器dufs(推荐)
 # PACKAGES="$PACKAGES luci-i18n-dufs-zh-cn"
 #首页和网络向导
-PACKAGES="$PACKAGES luci-i18n-quickstart-zh-cn"
+#PACKAGES="$PACKAGES luci-i18n-quickstart-zh-cn"
 
 # ======== shell/custom-packages.sh =======
 # 合并imm仓库以外的第三方插件
