@@ -519,7 +519,7 @@ on:
         description: "宽带密码 (若启用PPPoE)"
         required: false
   schedule:
-   - cron: 05 6 * * *
+   - cron: 05 22 * * *
 
 jobs:
   build:
@@ -529,6 +529,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Initialize Environment Variables
+        run: |
+          # 设定环境变量，如果 inputs 为空(定时任务触发)，则使用默认值
+          # 注意：定时任务触发时 github.event.inputs 是空的
+          
+          # 1. PROFILE (默认值设为 jcg_q30-ubootmod，你可以根据需要修改这个默认值)
+          echo "PROFILE=${{ github.event.inputs.profile || 'jcg_q30-ubootmod' }}" >> $GITHUB_ENV
+          
+          # 2. IP 地址
+          echo "CUSTOM_ROUTER_IP=${{ github.event.inputs.custom_router_ip || '192.168.99.1' }}" >> $GITHUB_ENV
+          
+          # 3. Store 商店
+          echo "ENABLE_STORE=${{ github.event.inputs.enable_store || 'false' }}" >> $GITHUB_ENV
+          
+          # 4. Docker
+          echo "INCLUDE_DOCKER=${{ github.event.inputs.include_docker || 'no' }}" >> $GITHUB_ENV
+          
+          # 5. PPPoE 设置
+          echo "ENABLE_PPPOE=${{ github.event.inputs.enable_pppoe || 'no' }}" >> $GITHUB_ENV
+          echo "PPPOE_ACCOUNT=${{ github.event.inputs.pppoe_account }}" >> $GITHUB_ENV
+          echo "PPPOE_PASSWORD=${{ github.event.inputs.pppoe_password }}" >> $GITHUB_ENV
+
       - name: Set executable permissions
         run: |
           chmod +x ${{ github.workspace }}/mediatek-filogic/build24.sh
@@ -536,14 +558,15 @@ jobs:
       - name: Save Custom Router IP into OpenWrt files
         run: |
           mkdir -p "${{ github.workspace }}/custom"
-          echo "${{ github.event.inputs.custom_router_ip }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
-          echo "您设置的路由器管理地址是:${{ github.event.inputs.custom_router_ip }}"
-          # 后续步骤会将该文件映射到路由器/etc/config/custom_router_ip.txt 以便用于开机脚本99-custom.sh读取用户设置的ip
+          # 使用 env 变量
+          echo "${{ env.CUSTOM_ROUTER_IP }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
+          echo "您设置的路由器管理地址是:${{ env.CUSTOM_ROUTER_IP }}"
 
       - name: Validate PPPoE Inputs
         run: |
-          if [[ "${{ inputs.enable_pppoe }}" == "yes" ]]; then
-            if [[ -z "${{ inputs.pppoe_account }}" || -z "${{ inputs.pppoe_password }}" ]]; then
+          # 使用 env 变量
+          if [[ "${{ env.ENABLE_PPPOE }}" == "yes" ]]; then
+            if [[ -z "${{ env.PPPOE_ACCOUNT }}" || -z "${{ env.PPPOE_PASSWORD }}" ]]; then
               echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
               exit 1
             fi
@@ -551,19 +574,21 @@ jobs:
       
       - name: Enable Store integration
         run: |
-          if [ "${{ github.event.inputs.enable_store }}" == "true" ]; then
+          # 使用 env 变量
+          if [ "${{ env.ENABLE_STORE }}" == "true" ]; then
             echo 'CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-app-store"' >> shell/custom-packages.sh
             echo "✅ 已追加 luci-app-store"
           else
             echo "❎ 未启用 luci-app-store"
           fi
 
-
       - name: Build Wireless ImmortalWrt
         run: |
-          profile="${{ github.event.inputs.profile }}"
+          # 使用 env 变量
+          profile="${{ env.PROFILE }}"
           echo "Building for profile: $profile"
-          include_docker="${{ github.event.inputs.include_docker }}"
+          include_docker="${{ env.INCLUDE_DOCKER }}"
+          
           # 默认平台
           echo "platform=mediatek/filogic" >> $GITHUB_ENV
 
@@ -645,28 +670,29 @@ jobs:
               -v "${{ github.workspace }}/mediatek-filogic/build24.sh:/home/build/immortalwrt/build.sh" \
               -e PROFILE=$profile \
               -e INCLUDE_DOCKER=$include_docker \
-              -e ENABLE_PPPOE=${{ inputs.enable_pppoe }} \
-              -e PPPOE_ACCOUNT=${{ inputs.pppoe_account }} \
-              -e PPPOE_PASSWORD=${{ inputs.pppoe_password }} \
+              -e ENABLE_PPPOE=${{ env.ENABLE_PPPOE }} \
+              -e PPPOE_ACCOUNT=${{ env.PPPOE_ACCOUNT }} \
+              -e PPPOE_PASSWORD=${{ env.PPPOE_PASSWORD }} \
             immortalwrt/imagebuilder:$tag /bin/bash /home/build/immortalwrt/build.sh
           
 
       - name: Create info & Generate Tag
         run: |
           # 1. 生成 info.md 内容
-          if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
+          if [ "${{ env.INCLUDE_DOCKER }}" == "yes" ]; then
             extra_content="### 默认带docker"
             echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
           else
             echo -e "NO docker"
           fi
-          custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
+          custom_router_ip="${{ env.CUSTOM_ROUTER_IP }}"
           extra_content_ip="#### 管理地址 $custom_router_ip"
           echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
 
           # 2. 生成带时间戳的 Tag 和 Release Name
           # 格式: 机型-年.月.日-时分 (例如: xiaomi_redmi-router-ax6000-2024.10.24-1430)
-          NOW_TAG="${{ github.event.inputs.profile }}-$(date +"%Y.%m.%d-%H%M")"
+          # 使用 env.PROFILE 确保非空
+          NOW_TAG="${{ env.PROFILE }}-$(date +"%Y.%m.%d-%H%M")"
           NOW_DATE="$(date +"%Y.%m.%d")"
           
           # 写入环境变量供下一步使用
@@ -679,7 +705,7 @@ jobs:
         run: |
           # 获取变量
           DATE="${{ env.RELEASE_DATE }}"
-          PROFILE="${{ github.event.inputs.profile }}"
+          PROFILE="${{ env.PROFILE }}"
           TARGET_DIR="${{ github.workspace }}/bin/targets/${{ env.platform }}"
           
           echo "Starting rename in $TARGET_DIR"
@@ -699,7 +725,7 @@ jobs:
         uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ github.event.inputs.profile }} ${{ env.RELEASE_DATE }}
+          name: ${{ env.PROFILE }} ${{ env.RELEASE_DATE }}
           body_path: ${{ github.workspace }}/mediatek-filogic/info.md
           make_latest: true
           files: |
