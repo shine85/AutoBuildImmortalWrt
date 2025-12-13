@@ -519,7 +519,7 @@ on:
         description: "宽带密码 (若启用PPPoE)"
         required: false
   schedule:
-   - cron: 10 03 * * *
+   - cron: 20 09 * * 6  #北京时间每周六的 9 点 20 分编译
 
 jobs:
   build:
