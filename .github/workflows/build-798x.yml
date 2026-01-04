@@ -622,15 +622,18 @@ jobs:
                   # 虽然它是高通ipq40xx平台 但由于都是gl机型 故放在一起 找起来方便
                   tag=ipq40xx-generic-openwrt-24.10.4
                   echo "platform=ipq40xx/generic" >> $GITHUB_ENV
+                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               glinet_gl-axt1800|glinet_gl-ax1800)
                   # 虽然它是高通ipq60xx平台 但由于都是gl机型 故放在一起 找起来方便
                   tag=qualcommax-ipq60xx-snapshot
                   echo "platform=qualcommax/ipq60xx" >> $GITHUB_ENV
+                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               xiaomi_redmi-router-ax6s)
                   tag=mediatek-mt7622-openwrt-24.10.4
                   echo "platform=mediatek/mt7622" >> $GITHUB_ENV
+                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               # 下列机型目前没有24.10 因此采用23.05.4分支来构建
               cmcc_rax3000m-emmc-ubootmod | \
@@ -645,6 +648,7 @@ jobs:
               xiaomi_redmi-router-ax6000 | \
               qihoo_360t7-ubootmod)
                   tag=mediatek-filogic-openwrt-23.05.4
+                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ls ${{ github.workspace }}/mediatek-filogic/
                   cp ${{ github.workspace }}/mediatek-filogic/build23.sh ${{ github.workspace }}/mediatek-filogic/build24.sh
                   ;;
@@ -657,6 +661,7 @@ jobs:
                       # 默认分支
                       tag=mediatek-filogic-openwrt-24.10.4
                   fi
+                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
             esac
           
@@ -745,7 +750,9 @@ jobs:
           
           MESSAGE="🎉 *固件编译成功*%0A%0A"
           MESSAGE="${MESSAGE}📱 *机型*: \`${{ env.PROFILE }}\`%0A"
-          MESSAGE="${MESSAGE}📅 *日期*: ${{ env.RELEASE_DATE }}%0A"
+          MESSAGE="${MESSAGE}� *源码*: ImmortalWrt%0A"
+          MESSAGE="${MESSAGE}🏷️ *版本*: \`${{ env.BUILD_TAG }}\`%0A"
+          MESSAGE="${MESSAGE}�📅 *日期*: ${{ env.RELEASE_DATE }}%0A"
           MESSAGE="${MESSAGE}🌐 *管理地址*: ${{ env.CUSTOM_ROUTER_IP }}%0A"
           if [ "${{ env.INCLUDE_DOCKER }}" == "yes" ]; then
             MESSAGE="${MESSAGE}🐳 *Docker*: 已集成%0A"
