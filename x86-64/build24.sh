@@ -66,6 +66,11 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 #首页和网络向导
 #PACKAGES="$PACKAGES luci-i18n-quickstart-zh-cn"
 
+#自己添加的
+PACKAGES="$PACKAGES luci-theme-kucat"
+PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
+PACKAGES="$PACKAGES luci-app-kucat-config" 
+
 # ======== shell/custom-packages.sh =======
 # 合并imm仓库以外的第三方插件
 PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
