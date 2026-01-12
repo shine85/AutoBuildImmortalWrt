@@ -11,7 +11,8 @@ if [ -n "$CUSTOM_PACKAGES" ]; then
   else
     # 下载 run 文件仓库
     echo "🔄 正在同步第三方软件仓库 Cloning run file repo..."
-    git clone --depth=1 https://github.com/wukongdaily/store.git /tmp/store-run-repo
+    #git clone --depth=1 https://github.com/wukongdaily/store.git /tmp/store-run-repo
+    git clone --depth=1 https://github.com/shine85/store.git /tmp/store-run-repo
 
     # 拷贝 run/arm64 下所有 run 文件和ipk文件 到 extra-packages 目录
     mkdir -p /home/build/immortalwrt/extra-packages
@@ -53,23 +54,32 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting build process..."
 # 定义所需安装的包列表 下列插件你都可以自行删减
 PACKAGES=""
 PACKAGES="$PACKAGES curl"
+# PACKAGES="$PACKAGES luci-i18n-diskman-zh-cn" 【自行去掉了】
 PACKAGES="$PACKAGES luci-i18n-firewall-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-filebrowser-zh-cn"
+# PACKAGES="$PACKAGES luci-i18n-filebrowser-zh-cn" 【自行去掉了】
 PACKAGES="$PACKAGES luci-theme-argon"
 PACKAGES="$PACKAGES luci-app-argon-config"
 PACKAGES="$PACKAGES luci-i18n-argon-config-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-diskman-zh-cn"
+
 #23.05
 PACKAGES="$PACKAGES luci-i18n-opkg-zh-cn"
 PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-passwall-zh-cn"
-PACKAGES="$PACKAGES luci-app-openclash"
+# PACKAGES="$PACKAGES luci-i18n-passwall-zh-cn" 【自行去掉了】
+# PACKAGES="$PACKAGES luci-app-openclash" 【自行去掉了】
 PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
-PACKAGES="$PACKAGES openssh-sftp-server"
-# 增加几个必备组件 方便用户安装iStore
-PACKAGES="$PACKAGES fdisk"
-PACKAGES="$PACKAGES script-utils"
-PACKAGES="$PACKAGES luci-i18n-samba4-zh-cn"
+# PACKAGES="$PACKAGES openssh-sftp-server" 【自行去掉了】
+
+#自己添加的
+
+PACKAGES="$PACKAGES luci-theme-kucat"
+# PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
+PACKAGES="$PACKAGES luci-app-kucat-config" 
+#【编译了设置没效果】
+
+# 增加几个必备组件 方便用户安装iStore 【自行去掉了】
+# PACKAGES="$PACKAGES fdisk"
+# PACKAGES="$PACKAGES script-utils"
+# PACKAGES="$PACKAGES luci-i18n-samba4-zh-cn"
 # 第三方软件包 合并
 # ======== shell/custom-packages.sh =======
 PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
@@ -94,7 +104,7 @@ if echo "$PACKAGES" | grep -q "luci-app-openclash"; then
 else
     echo "⚪️ 未选择 luci-app-openclash"
 fi
-
+export Customized_Information="༄Shine 🔸࿐ 编译于$(TZ=UTC-8 date "+%Y.%m.%d")"  # 个性签名,你想写啥就写啥，(填0为不作修改)
 
 # 构建镜像
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Building image with the following packages:"
