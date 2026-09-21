@@ -1,0 +1,28 @@
+name: Keepalive
+
+on:
+  schedule:
+    - cron: "27 16 1,15 * *"  # UTC；约北京时间每月 1 日、15 日 00:27
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Keep scheduled workflows active
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git log -1 --since='20 days ago' --pretty=%H)" ]; then
+            echo "近 20 天已有提交，无需保活"
+            git log -1 --oneline
+            exit 0
+          fi
+          git commit --allow-empty -m "chore: keepalive scheduled workflows"
+          git push
