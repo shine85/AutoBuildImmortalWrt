@@ -1,6 +1,7 @@
 #!/bin/bash
 source shell/custom-packages.sh
 source shell/autoupdate-ib.sh
+source shell/kucat-ib.sh
 
 source shell/switch_repository.sh
 # 该文件实际为imagebuilder容器内的build.sh
@@ -19,6 +20,7 @@ echo "✅ Run files copied to extra-packages:"
 ls -lh /home/build/immortalwrt/extra-packages/*.run
 # 解压并拷贝ipk到packages目录
 sh shell/prepare-packages.sh
+fetch_kucat_ipks
 ls -lah /home/build/immortalwrt/packages/
 # 添加架构优先级信息
 sed -i '1i\
@@ -73,6 +75,7 @@ if [ "$PROFILE" = "glinet_gl-axt1800" ] || [ "$PROFILE" = "glinet_gl-ax1800" ]; 
 else
     echo "Other Model:$PROFILE"
     PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
+    add_kucat_packages
     enable_autoupdate_ib
 
 fi

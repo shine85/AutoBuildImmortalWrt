@@ -1,6 +1,7 @@
 #!/bin/bash
 source shell/custom-packages.sh
 source shell/autoupdate-ib.sh
+source shell/kucat-ib.sh
 
 source shell/switch_repository.sh
 # 该文件实际为imagebuilder容器内的build.sh
@@ -25,6 +26,7 @@ if [ -n "$CUSTOM_PACKAGES" ]; then
     ls -lh /home/build/immortalwrt/extra-packages/*.run
     # 解压并拷贝ipk到packages目录
     sh shell/prepare-packages.sh
+    fetch_kucat_ipks
     ls -lah /home/build/immortalwrt/packages/
     # 添加架构优先级信息
     sed -i '1i\
@@ -74,10 +76,7 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 
 #自己添加的
 
-PACKAGES="$PACKAGES luci-theme-kucat"
-# PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
-# PACKAGES="$PACKAGES luci-app-kucat-config" 
-# 23.05 仓库没有 luci-app-kucat-config，硬装会失败；主题 kucat 仍保留
+add_kucat_packages
 
 # 增加几个必备组件 方便用户安装iStore 【自行去掉了】
 # PACKAGES="$PACKAGES fdisk"
