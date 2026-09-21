@@ -3,7 +3,7 @@
 # 匹配规则与 281677160/luci-app-autoupdate 的 AutoUpdate 一致，不调用另一仓库的编译系统。
 
 prepare_autoupdate_files() {
-  local repo="/tmp/luci-app-autoupdate"
+  local repo="/tmp/src-autoupdate"
   local dest="/home/build/immortalwrt/files"
   rm -rf "$repo"
   git clone --depth=1 --branch=main https://github.com/281677160/luci-app-autoupdate.git "$repo"
@@ -18,6 +18,7 @@ prepare_autoupdate_files() {
   cp -a "$repo/luasrc/model/cbi/autoupdate/autoupdate.lua" "$dest/usr/lib/lua/luci/model/cbi/autoupdate/autoupdate.lua"
   chmod 755 "$dest/etc/init.d/autoupdate" "$dest/usr/bin/AutoUpdate" "$dest/usr/bin/AutoUpgrade" \
     "$dest/etc/uci-defaults/40_luci-app-autoupdate"
+  rm -rf "$repo"
   echo "✅ 已装入 luci-app-autoupdate 文件"
 }
 
