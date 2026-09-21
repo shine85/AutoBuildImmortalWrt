@@ -652,6 +652,17 @@ jobs:
             esac
 
             echo "BUILD_TAG=$tag" >> $GITHUB_ENV
+            AUTOUPDATE_TS=$(date +%s)
+            echo "AUTOUPDATE_TS=$AUTOUPDATE_TS" >> $GITHUB_ENV
+            case "$tag" in
+              *23.05*) luci_edition=23.05 ;;
+              *) luci_edition=24.10 ;;
+            esac
+            echo "LUCI_EDITION=$luci_edition" >> $GITHUB_ENV
+            platform_value=$(grep "^platform=" "$GITHUB_ENV" | tail -n1 | cut -d= -f2-)
+            target_board="${platform_value%%/*}"
+            echo "TARGET_BOARD=$target_board" >> $GITHUB_ENV
+            echo "UPDATE_TAG=Update-${target_board}-${profile}" >> $GITHUB_ENV
           
             docker run --rm -i \
               --user root \
@@ -666,25 +677,40 @@ jobs:
               -e ENABLE_PPPOE=${{ env.ENABLE_PPPOE }} \
               -e PPPOE_ACCOUNT=${{ env.PPPOE_ACCOUNT }} \
               -e PPPOE_PASSWORD=${{ env.PPPOE_PASSWORD }} \
+              -e GITHUB_LINK=https://github.com/${{ github.repository }} \
+              -e AUTOUPDATE_TS=$AUTOUPDATE_TS \
+              -e LUCI_EDITION=$luci_edition \
+              -e TARGET_BOARD=$target_board \
             immortalwrt/imagebuilder:$tag /bin/bash /home/build/immortalwrt/build.sh
           
 
       - name: Create info & Generate Tag
+        env:
+          TARGET_DIR: ${{ github.workspace }}/bin/targets/${{ env.platform }}
+          PROFILE: ${{ env.PROFILE }}
+          CUSTOM_ROUTER_IP: ${{ env.CUSTOM_ROUTER_IP }}
+          BUILD_TAG: ${{ env.BUILD_TAG }}
+          LUCI_EDITION: ${{ env.LUCI_EDITION }}
+          INCLUDE_DOCKER: ${{ env.INCLUDE_DOCKER }}
+          ENABLE_STORE: ${{ env.ENABLE_STORE }}
+          UPDATE_TAG: ${{ env.UPDATE_TAG }}
+          TARGET_BOARD: ${{ env.TARGET_BOARD }}
         run: |
-          if [ "${{ env.INCLUDE_DOCKER }}" == "yes" ]; then
-            extra_content="### 默认带docker"
-            echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
-          else
-            echo -e "NO docker"
-          fi
-          custom_router_ip="${{ env.CUSTOM_ROUTER_IP }}"
-          extra_content_ip="#### 管理地址 $custom_router_ip"
-          echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
+          node "${{ github.workspace }}/shell/describe-release.cjs"
           NOW_TAG="${{ env.PROFILE }}-$(date +"%Y.%m.%d-%H%M")"
           NOW_DATE="$(date +"%Y.%m.%d")"
           echo "RELEASE_TAG=$NOW_TAG" >> $GITHUB_ENV
           echo "RELEASE_DATE=$NOW_DATE" >> $GITHUB_ENV
           echo "✅ Generated Tag: $NOW_TAG"
+
+      - name: Prepare AutoUpdate firmware
+        run: |
+          export TARGET_DIR="${{ github.workspace }}/bin/targets/${{ env.platform }}"
+          export PROFILE="${{ env.PROFILE }}"
+          export AUTOUPDATE_TS="${{ env.AUTOUPDATE_TS }}"
+          export LUCI_EDITION="${{ env.LUCI_EDITION }}"
+          export TARGET_BOARD="${{ env.TARGET_BOARD }}"
+          bash "${{ github.workspace }}/shell/publish-autoupdate.sh" prepare
 
       - name: Rename Firmware Files
         run: |
@@ -704,14 +730,34 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.PROFILE }} ${{ env.RELEASE_DATE }}
-          body_path: ${{ github.workspace }}/mediatek-filogic/info.md
+          name: ${{ env.RELEASE_NOTES_TITLE }}
+          body_path: ${{ github.workspace }}/release-body.md
           make_latest: true
           files: |
             ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish AutoUpdate channel
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.UPDATE_TAG }}
+          name: ${{ env.AUTOUPDATE_RELEASE_TITLE }}
+          body_path: ${{ github.workspace }}/release-body.md
+          make_latest: false
+          files: |
+            ${{ github.workspace }}/autoupdate-dist/*.bin
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload AutoUpdate zzz_api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TAG: ${{ env.UPDATE_TAG }}
+        run: bash "${{ github.workspace }}/shell/publish-autoupdate.sh" index
 
       - name: Send Telegram Notification
         env:

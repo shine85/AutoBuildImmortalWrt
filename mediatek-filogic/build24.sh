@@ -1,5 +1,7 @@
 #!/bin/bash
 source shell/custom-packages.sh
+source shell/autoupdate-ib.sh
+
 source shell/switch_repository.sh
 # 该文件实际为imagebuilder容器内的build.sh
 
@@ -71,6 +73,8 @@ if [ "$PROFILE" = "glinet_gl-axt1800" ] || [ "$PROFILE" = "glinet_gl-ax1800" ]; 
 else
     echo "Other Model:$PROFILE"
     PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
+    enable_autoupdate_ib
+
 fi
 
 # 判断是否需要编译 Docker 插件

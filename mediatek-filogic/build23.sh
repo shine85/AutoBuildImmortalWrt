@@ -1,5 +1,7 @@
 #!/bin/bash
 source shell/custom-packages.sh
+source shell/autoupdate-ib.sh
+
 source shell/switch_repository.sh
 # 该文件实际为imagebuilder容器内的build.sh
 
@@ -84,6 +86,8 @@ PACKAGES="$PACKAGES luci-app-kucat-config"
 # 第三方软件包 合并
 # ======== shell/custom-packages.sh =======
 PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
+enable_autoupdate_ib
+
 
 # 判断是否需要编译 Docker 插件
 if [ "$INCLUDE_DOCKER" = "yes" ]; then

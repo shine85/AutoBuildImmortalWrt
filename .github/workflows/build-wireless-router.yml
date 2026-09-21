@@ -637,6 +637,20 @@ jobs:
                   fi
                   ;;
             esac
+
+            AUTOUPDATE_TS=$(date +%s)
+            echo "BUILD_TAG=$tag" >> $GITHUB_ENV
+            echo "AUTOUPDATE_TS=$AUTOUPDATE_TS" >> $GITHUB_ENV
+            case "$tag" in
+              *23.05*) luci_edition=23.05 ;;
+              *) luci_edition=24.10 ;;
+            esac
+            echo "LUCI_EDITION=$luci_edition" >> $GITHUB_ENV
+            platform_value=$(grep "^platform=" "$GITHUB_ENV" | tail -n1 | cut -d= -f2-)
+            target_board="${platform_value%%/*}"
+            echo "TARGET_BOARD=$target_board" >> $GITHUB_ENV
+            echo "PROFILE=$profile" >> $GITHUB_ENV
+            echo "UPDATE_TAG=Update-${target_board}-${profile}" >> $GITHUB_ENV
           
             docker run --rm -i \
               --user root \
@@ -651,30 +665,64 @@ jobs:
               -e ENABLE_PPPOE=${{ inputs.enable_pppoe }} \
               -e PPPOE_ACCOUNT=${{ inputs.pppoe_account }} \
               -e PPPOE_PASSWORD=${{ inputs.pppoe_password }} \
+              -e GITHUB_LINK=https://github.com/${{ github.repository }} \
+              -e AUTOUPDATE_TS=$AUTOUPDATE_TS \
+              -e LUCI_EDITION=$luci_edition \
+              -e TARGET_BOARD=$target_board \
             immortalwrt/imagebuilder:$tag /bin/bash /home/build/immortalwrt/build.sh
           
 
-      - name: Create info
+      - name: Prepare AutoUpdate firmware
         run: |
-          if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
-            extra_content="### 默认带docker"
-            echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
-          else
-            echo -e "NO docker"
-          fi
-          custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
-          extra_content_ip="#### 管理地址 $custom_router_ip"
-          echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
+          export TARGET_DIR="${{ github.workspace }}/bin/targets/${{ env.platform }}"
+          export PROFILE="${{ env.PROFILE }}"
+          export AUTOUPDATE_TS="${{ env.AUTOUPDATE_TS }}"
+          export LUCI_EDITION="${{ env.LUCI_EDITION }}"
+          export TARGET_BOARD="${{ env.TARGET_BOARD }}"
+          bash "${{ github.workspace }}/shell/publish-autoupdate.sh" prepare
+
+      - name: Create info
+        env:
+          TARGET_DIR: ${{ github.workspace }}/bin/targets/${{ env.platform }}
+          PROFILE: ${{ env.PROFILE }}
+          CUSTOM_ROUTER_IP: ${{ github.event.inputs.custom_router_ip }}
+          BUILD_TAG: ${{ env.BUILD_TAG }}
+          LUCI_EDITION: ${{ env.LUCI_EDITION }}
+          INCLUDE_DOCKER: ${{ github.event.inputs.include_docker }}
+          ENABLE_STORE: ${{ github.event.inputs.enable_store }}
+          UPDATE_TAG: ${{ env.UPDATE_TAG }}
+          TARGET_BOARD: ${{ env.TARGET_BOARD }}
+        run: node "${{ github.workspace }}/shell/describe-release.cjs"
           
           
       - name: Upload ImmortalWrt as release assets
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.profile }}
-          name: ImmortalWrt-Wireless
-          body_path: ${{ github.workspace }}/mediatek-filogic/info.md
+          name: ${{ env.RELEASE_NOTES_TITLE }}
+          body_path: ${{ github.workspace }}/release-body.md
           files: |
             ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish AutoUpdate channel
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.UPDATE_TAG }}
+          name: ${{ env.AUTOUPDATE_RELEASE_TITLE }}
+          body_path: ${{ github.workspace }}/release-body.md
+          make_latest: false
+          files: |
+            ${{ github.workspace }}/autoupdate-dist/*.bin
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload AutoUpdate zzz_api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TAG: ${{ env.UPDATE_TAG }}
+        run: bash "${{ github.workspace }}/shell/publish-autoupdate.sh" index
