@@ -110,6 +110,8 @@ fi
 
 
 # 构建镜像
+cleanup_tmp_luci_dirs
+
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Building image with the following packages:"
 echo "$PACKAGES"
 

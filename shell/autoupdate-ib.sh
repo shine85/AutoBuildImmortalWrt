@@ -56,6 +56,11 @@ add_autoupdate_packages() {
   fi
 }
 
+cleanup_tmp_luci_dirs() {
+  # kucat-config.postinst 使用 rm /tmp/luci-*（不带 -r），碰到目录会直接失败
+  find /tmp -maxdepth 1 -type d -name 'luci-*' -prune -exec rm -rf {} + 2>/dev/null || true
+}
+
 enable_autoupdate_ib() {
   if [ -z "${AUTOUPDATE_TS:-}" ] || [ -z "${GITHUB_LINK:-}" ] || [ -z "${PROFILE:-}" ] || [ -z "${TARGET_BOARD:-}" ] || [ -z "${LUCI_EDITION:-}" ]; then
     echo "⏭️ 未提供 AutoUpdate 参数，跳过在线升级集成"
@@ -64,4 +69,5 @@ enable_autoupdate_ib() {
   prepare_autoupdate_files
   write_openwrt_update
   add_autoupdate_packages
+  cleanup_tmp_luci_dirs
 }
