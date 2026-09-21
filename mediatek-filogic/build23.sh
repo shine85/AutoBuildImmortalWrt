@@ -76,8 +76,8 @@ PACKAGES="$PACKAGES luci-i18n-homeproxy-zh-cn"
 
 PACKAGES="$PACKAGES luci-theme-kucat"
 # PACKAGES="$PACKAGES luci-i18n-kucat-config-zh-cn"
-PACKAGES="$PACKAGES luci-app-kucat-config" 
-#【编译了设置没效果】
+# PACKAGES="$PACKAGES luci-app-kucat-config" 
+# 23.05 仓库没有 luci-app-kucat-config，硬装会失败；主题 kucat 仍保留
 
 # 增加几个必备组件 方便用户安装iStore 【自行去掉了】
 # PACKAGES="$PACKAGES fdisk"
