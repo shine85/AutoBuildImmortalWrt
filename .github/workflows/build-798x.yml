@@ -10,8 +10,8 @@
 # jcg_q30-ubootmod
 # qihoo_360t7-ubootmod
 # xiaomi_mi-router-wr30u-112m-nmbm
-# xiaomi_redmi-router-ax6000 该机型在24.10.4 分化为2个机型
-# —————————————————————————————24.10.4—————————————————————————————————
+# xiaomi_redmi-router-ax6000 该机型在24.10.6 分化为2个机型
+# —————————————————————————————24.10.6—————————————————————————————————
 # xiaomi_redmi-router-ax6000-stock ————原厂默认 bootloader（stock）版本
 # xiaomi_redmi-router-ax6000-ubootmod—————改装过 bootloader 的版本（ubootmod）
 
@@ -518,8 +518,12 @@ on:
       pppoe_password:
         description: "宽带密码 (若启用PPPoE)"
         required: false
+
   schedule:
-   - cron: 20 09 * * 6  #北京时间每周六的 9 点 20 分编译
+    - cron: "20 09 * * 6"  # 北京时间每周六 09:20 编译
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -527,26 +531,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Initialize Environment Variables
         run: |
-          # 设定环境变量，如果 inputs 为空(定时任务触发)，则使用默认值
-          # 注意：定时任务触发时 github.event.inputs 是空的
-          
-          # 1. PROFILE (默认值设为 jcg_q30-ubootmod，你可以根据需要修改这个默认值)
+          # 定时任务触发时 github.event.inputs 为空，回落到 798x 默认值
           echo "PROFILE=${{ github.event.inputs.profile || 'jcg_q30-ubootmod' }}" >> $GITHUB_ENV
-          
-          # 2. IP 地址
           echo "CUSTOM_ROUTER_IP=${{ github.event.inputs.custom_router_ip || '192.168.99.1' }}" >> $GITHUB_ENV
-          
-          # 3. Store 商店
           echo "ENABLE_STORE=${{ github.event.inputs.enable_store || 'false' }}" >> $GITHUB_ENV
-          
-          # 4. Docker
           echo "INCLUDE_DOCKER=${{ github.event.inputs.include_docker || 'no' }}" >> $GITHUB_ENV
-          
-          # 5. PPPoE 设置
           echo "ENABLE_PPPOE=${{ github.event.inputs.enable_pppoe || 'no' }}" >> $GITHUB_ENV
           echo "PPPOE_ACCOUNT=${{ github.event.inputs.pppoe_account }}" >> $GITHUB_ENV
           echo "PPPOE_PASSWORD=${{ github.event.inputs.pppoe_password }}" >> $GITHUB_ENV
@@ -558,13 +551,13 @@ jobs:
       - name: Save Custom Router IP into OpenWrt files
         run: |
           mkdir -p "${{ github.workspace }}/custom"
-          # 使用 env 变量
           echo "${{ env.CUSTOM_ROUTER_IP }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
           echo "您设置的路由器管理地址是:${{ env.CUSTOM_ROUTER_IP }}"
+          # 后续步骤会将该文件映射到路由器/etc/config/custom_router_ip.txt 以便用于开机脚本99-custom.sh读取用户设置的ip
+
 
       - name: Validate PPPoE Inputs
         run: |
-          # 使用 env 变量
           if [[ "${{ env.ENABLE_PPPOE }}" == "yes" ]]; then
             if [[ -z "${{ env.PPPOE_ACCOUNT }}" || -z "${{ env.PPPOE_PASSWORD }}" ]]; then
               echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
@@ -574,7 +567,6 @@ jobs:
       
       - name: Enable Store integration
         run: |
-          # 使用 env 变量
           if [ "${{ env.ENABLE_STORE }}" == "true" ]; then
             echo 'CUSTOM_PACKAGES="$CUSTOM_PACKAGES luci-app-store"' >> shell/custom-packages.sh
             echo "✅ 已追加 luci-app-store"
@@ -582,13 +574,12 @@ jobs:
             echo "❎ 未启用 luci-app-store"
           fi
 
+
       - name: Build Wireless ImmortalWrt
         run: |
-          # 使用 env 变量
           profile="${{ env.PROFILE }}"
           echo "Building for profile: $profile"
           include_docker="${{ env.INCLUDE_DOCKER }}"
-          
           # 默认平台
           echo "platform=mediatek/filogic" >> $GITHUB_ENV
 
@@ -596,7 +587,7 @@ jobs:
           ipq807x_models=$(cat model/ipq807x.txt | tr '\n' '|')
           ipq807x_models=${ipq807x_models%|}
           if [[ "$profile" =~ ^($ipq807x_models)$ ]]; then
-              case_tag="qualcommax-ipq807x-openwrt-24.10.4"
+              case_tag="qualcommax-ipq807x-openwrt-24.10.6"
               case_platform="qualcommax/ipq807x"
           fi
 
@@ -604,7 +595,7 @@ jobs:
           mt7621_models=$(cat model/mt7621.txt | tr '\n' '|')
           mt7621_models=${mt7621_models%|}
           if [[ "$profile" =~ ^($mt7621_models)$ ]]; then
-              case_tag="ramips-mt7621-openwrt-24.10.4"
+              case_tag="ramips-mt7621-openwrt-24.10.6"
               case_platform="ramips/mt7621"
           fi
 
@@ -612,7 +603,7 @@ jobs:
           bcm53xx_models=$(cat model/bcm53xx.txt | tr '\n' '|')
           bcm53xx_models=${bcm53xx_models%|}
           if [[ "$profile" =~ ^($bcm53xx_models)$ ]]; then
-              case_tag="bcm53xx-generic-openwrt-24.10.4"
+              case_tag="bcm53xx-generic-openwrt-24.10.6"
               case_platform="bcm53xx/generic"
           fi
 
@@ -620,20 +611,17 @@ jobs:
           case "$profile" in
               glinet_gl-b2200)
                   # 虽然它是高通ipq40xx平台 但由于都是gl机型 故放在一起 找起来方便
-                  tag=ipq40xx-generic-openwrt-24.10.4
+                  tag=ipq40xx-generic-openwrt-24.10.6
                   echo "platform=ipq40xx/generic" >> $GITHUB_ENV
-                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               glinet_gl-axt1800|glinet_gl-ax1800)
                   # 虽然它是高通ipq60xx平台 但由于都是gl机型 故放在一起 找起来方便
                   tag=qualcommax-ipq60xx-snapshot
                   echo "platform=qualcommax/ipq60xx" >> $GITHUB_ENV
-                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               xiaomi_redmi-router-ax6s)
-                  tag=mediatek-mt7622-openwrt-24.10.4
+                  tag=mediatek-mt7622-openwrt-24.10.6
                   echo "platform=mediatek/mt7622" >> $GITHUB_ENV
-                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
               # 下列机型目前没有24.10 因此采用23.05.4分支来构建
               cmcc_rax3000m-emmc-ubootmod | \
@@ -648,7 +636,6 @@ jobs:
               xiaomi_redmi-router-ax6000 | \
               qihoo_360t7-ubootmod)
                   tag=mediatek-filogic-openwrt-23.05.4
-                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ls ${{ github.workspace }}/mediatek-filogic/
                   cp ${{ github.workspace }}/mediatek-filogic/build23.sh ${{ github.workspace }}/mediatek-filogic/build24.sh
                   ;;
@@ -659,11 +646,12 @@ jobs:
                       echo "platform=$case_platform" >> $GITHUB_ENV
                   else
                       # 默认分支
-                      tag=mediatek-filogic-openwrt-24.10.4
+                      tag=mediatek-filogic-openwrt-24.10.6
                   fi
-                  echo "BUILD_TAG=$tag" >> $GITHUB_ENV
                   ;;
             esac
+
+            echo "BUILD_TAG=$tag" >> $GITHUB_ENV
           
             docker run --rm -i \
               --user root \
@@ -683,7 +671,6 @@ jobs:
 
       - name: Create info & Generate Tag
         run: |
-          # 1. 生成 info.md 内容
           if [ "${{ env.INCLUDE_DOCKER }}" == "yes" ]; then
             extra_content="### 默认带docker"
             echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
@@ -693,41 +680,28 @@ jobs:
           custom_router_ip="${{ env.CUSTOM_ROUTER_IP }}"
           extra_content_ip="#### 管理地址 $custom_router_ip"
           echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
-
-          # 2. 生成带时间戳的 Tag 和 Release Name
-          # 格式: 机型-年.月.日-时分 (例如: xiaomi_redmi-router-ax6000-2024.10.24-1430)
-          # 使用 env.PROFILE 确保非空
           NOW_TAG="${{ env.PROFILE }}-$(date +"%Y.%m.%d-%H%M")"
           NOW_DATE="$(date +"%Y.%m.%d")"
-          
-          # 写入环境变量供下一步使用
           echo "RELEASE_TAG=$NOW_TAG" >> $GITHUB_ENV
           echo "RELEASE_DATE=$NOW_DATE" >> $GITHUB_ENV
-          
           echo "✅ Generated Tag: $NOW_TAG"
 
       - name: Rename Firmware Files
         run: |
-          # 获取变量
           DATE="${{ env.RELEASE_DATE }}"
           PROFILE="${{ env.PROFILE }}"
           TARGET_DIR="${{ github.workspace }}/bin/targets/${{ env.platform }}"
-          
           echo "Starting rename in $TARGET_DIR"
           cd "$TARGET_DIR" || exit 1
-          
-          # 遍历文件
           for file in *; do
             if [ -f "$file" ]; then
-              # 新文件名格式: 机型_日期_原文件名
-              # 使用 sudo mv 解决权限问题 (因为文件是 docker root 生成的)
               sudo mv "$file" "${PROFILE}_${DATE}_${file}"
               echo "Renamed: $file -> ${PROFILE}_${DATE}_${file}"
             fi
           done
 
       - name: Upload ImmortalWrt as release assets
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.PROFILE }} ${{ env.RELEASE_DATE }}
@@ -735,6 +709,7 @@ jobs:
           make_latest: true
           files: |
             ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
+          token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -743,16 +718,16 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          # Telegram 配置(从 GitHub Secrets 读取)
-          
-          # 构建消息内容
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "⏭️ 未配置 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID，跳过通知"
+            exit 0
+          fi
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}"
-          
           MESSAGE="🎉 *固件编译成功*%0A%0A"
           MESSAGE="${MESSAGE}📱 *机型*: \`${{ env.PROFILE }}\`%0A"
-          MESSAGE="${MESSAGE}� *源码*: ImmortalWrt%0A"
+          MESSAGE="${MESSAGE}📦 *源码*: ImmortalWrt%0A"
           MESSAGE="${MESSAGE}🏷️ *版本*: \`${{ env.BUILD_TAG }}\`%0A"
-          MESSAGE="${MESSAGE}�📅 *日期*: ${{ env.RELEASE_DATE }}%0A"
+          MESSAGE="${MESSAGE}📅 *日期*: ${{ env.RELEASE_DATE }}%0A"
           MESSAGE="${MESSAGE}🌐 *管理地址*: ${{ env.CUSTOM_ROUTER_IP }}%0A"
           if [ "${{ env.INCLUDE_DOCKER }}" == "yes" ]; then
             MESSAGE="${MESSAGE}🐳 *Docker*: 已集成%0A"
@@ -761,12 +736,9 @@ jobs:
             MESSAGE="${MESSAGE}🏪 *Store*: 已集成%0A"
           fi
           MESSAGE="${MESSAGE}%0A🔗 [点击下载固件](${RELEASE_URL})"
-          
-          # 发送消息到 Telegram
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
             -d text="${MESSAGE}" \
             -d parse_mode="Markdown" \
             -d disable_web_page_preview=true
-          
           echo "✅ Telegram 通知已发送"
